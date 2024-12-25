@@ -78,6 +78,13 @@ async function run() {
       res.send(orders)
     })
 
+    // Delete a specific order 
+    app.delete('/deleteOrder/:orderId', async(req, res) => {
+      const { orderId } = req.params;
+      const query = { _id: new ObjectId(orderId) };
+      const result = await purchasesCollection.deleteOne(query);
+      res.send(result)
+    })
 
   } finally {
     // Ensures that the client will close when you finish/error
