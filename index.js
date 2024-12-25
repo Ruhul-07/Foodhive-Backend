@@ -46,14 +46,16 @@ async function run() {
     })
     // Purchase a food item with update purchaseCount
     app.post('/purchaseFood', async(req, res) => {
-      const { foodId, buyerName, buyerEmail, quantity, price, buyingDate } = req.body
+      const { foodId, foodName, buyerName, buyerEmail, quantity, price, buyingDate,foodImg } = req.body
       const purchase = {
         foodId: new ObjectId(foodId),
+        foodName,
         buyerName,
         buyerEmail,
         quantity,
         price,
         buyingDate,
+        foodImg,
       };
       const result =await purchasesCollection.insertOne(purchase)
       // update purchaseCount
@@ -66,6 +68,14 @@ async function run() {
       } else {
         res.status(500).send({ message: 'Error occurred during purchase' });
       }
+    })
+
+    // Get order by user 
+    app.get('/myOrders/:email', async(req, res) => {
+      const email = req.params.email;
+      const query = {buyerEmail: email};
+      const orders = await purchasesCollection.find(query).toArray()
+      res.send(orders)
     })
 
 
