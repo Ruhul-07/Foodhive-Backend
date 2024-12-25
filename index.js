@@ -48,6 +48,7 @@ async function run() {
 
     // add food item
     app.post("/addFood", async (req, res) => {
+      console.log(req.body)
       const {
         name,
         category,
@@ -76,8 +77,17 @@ async function run() {
         },
       };
       const result = await foodsCollection.insertOne(newFood);
+      console.log("Insert result:", result);
       res.send(result);
     });
+
+    // my foods api
+    app.get('/myFoods', async(req, res) => {
+      const email = req.query.email;
+      const query = {"addedBy.email": email};
+      const result = await foodsCollection.find(query).toArray();
+      res.send(result)
+    })
 
     // Purchase a food item with update purchaseCount
     app.post("/purchaseFood", async (req, res) => {
