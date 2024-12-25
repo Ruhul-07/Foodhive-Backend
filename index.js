@@ -89,6 +89,22 @@ async function run() {
       res.send(result)
     })
 
+    // update food
+    app.put('/updateFood/:id', async(req, res) => {
+      const { id } = req.params;
+      const updatedData = req.body;
+      if (updatedData._id) {
+        delete updatedData._id;
+      }
+      const query = {_id: new ObjectId(id)};
+      const updateDoc = {
+        $set: updatedData,
+      };
+      const result = await foodsCollection.updateOne(query, updateDoc);
+      res.send(result)
+    })
+    
+
     // Purchase a food item with update purchaseCount
     app.post("/purchaseFood", async (req, res) => {
       const {
