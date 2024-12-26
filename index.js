@@ -2,11 +2,36 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const app = express();
 const port = process.env.PORT || 5000;
+const secret = process.env.JSON_WEB_TOKEN
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+const verifyJWT = (req, res, next) => {
+  const token = req.cookies.jwtToken;
+
+  if (!token) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+
+  const secret = process.env.JWT_SECRET || "your_secret_key";
+  jwt.verify(token, secret, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.joj1d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -32,11 +57,38 @@ async function run() {
     const foodsCollection = client.db("foodhive").collection("foods");
     const purchasesCollection = client.db("foodhive").collection("purchases");
 
+    // auth jwt
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const secret = process.env.JWT_SECRET || "your_secret_key";
+      const token = jwt.sign(user, secret, { expiresIn: "1h" });
+
+      // Set the token as an HTTP-only cookie
+      res
+        .cookie("jwtToken", token, {
+          httpOnly: true, // Prevents client-side access
+          secure: process.env.NODE_ENV === "production", // Only send over HTTPS in production
+          maxAge: 3600000, // 1 hour
+        })
+        .send({ message: "JWT token issued" });
+    });
+
+    
+
     // Get all foods APIs
     app.get("/foods", async (req, res) => {
       const cursor = foodsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+    });
+    // log out jwt
+    app.post("/logout", (req, res) => {
+      res
+        .clearCookie("jwtToken", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+        })
+        .send({ message: "Logged out successfully" });
     });
     // Get a single food item by ID
     app.get("/foods/:id", async (req, res) => {
@@ -48,7 +100,7 @@ async function run() {
 
     // add food item
     app.post("/addFood", async (req, res) => {
-      console.log(req.body)
+      console.log(req.body);
       const {
         name,
         category,
@@ -82,28 +134,27 @@ async function run() {
     });
 
     // my foods api
-    app.get('/myFoods', async(req, res) => {
+    app.get("/myFoods",  verifyJWT, async (req, res) => {
       const email = req.query.email;
-      const query = {"addedBy.email": email};
+      const query = { "addedBy.email": email };
       const result = await foodsCollection.find(query).toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // update food
-    app.put('/updateFood/:id', async(req, res) => {
+    app.put("/updateFood/:id", async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
       if (updatedData._id) {
         delete updatedData._id;
       }
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: updatedData,
       };
       const result = await foodsCollection.updateOne(query, updateDoc);
-      res.send(result)
-    })
-    
+      res.send(result);
+    });
 
     // Purchase a food item with update purchaseCount
     app.post("/purchaseFood", async (req, res) => {
