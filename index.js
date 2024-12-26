@@ -73,7 +73,18 @@ async function run() {
         .send({ message: "JWT token issued" });
     });
 
-    
+    app.get("/topFoods", async (req, res) => {
+      try {
+        const topFoods = await foodsCollection
+          .find()
+          .sort({ purchaseCount: -1 }) // Sort by purchase count in descending order
+          .limit(6) // Limit to top 6 items
+          .toArray();
+        res.status(200).send(topFoods);
+      } catch (error) {
+        res.status(500).send({ message: "Error fetching top foods", error });
+      }
+    });
 
     // Get all foods APIs
     app.get("/foods", async (req, res) => {
