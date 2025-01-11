@@ -78,7 +78,7 @@ async function run() {
         const topFoods = await foodsCollection
           .find()
           .sort({ purchaseCount: -1 }) // Sort by purchase count in descending order
-          .limit(6) // Limit to top 6 items
+          .limit(8) // Limit to top 6 items
           .toArray();
         res.status(200).send(topFoods);
       } catch (error) {
