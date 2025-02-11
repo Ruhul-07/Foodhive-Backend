@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 const secret = process.env.JSON_WEB_TOKEN
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'https://foodhive-65f29.web.app/'],
   credentials: true,
 }));
 app.use(express.json());
@@ -78,7 +78,7 @@ async function run() {
         const topFoods = await foodsCollection
           .find()
           .sort({ purchaseCount: -1 }) // Sort by purchase count in descending order
-          .limit(8) // Limit to top 6 items
+          .limit(8) // Limit to top 8 items
           .toArray();
         res.status(200).send(topFoods);
       } catch (error) {
